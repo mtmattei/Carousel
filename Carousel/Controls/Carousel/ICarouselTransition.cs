@@ -1,3 +1,4 @@
+using System;
 using Microsoft.UI.Xaml;
 
 namespace Uno.Toolkit.UI;
@@ -8,17 +9,18 @@ namespace Uno.Toolkit.UI;
 public interface ICarouselTransition
 {
     /// <summary>
-    /// Called when a transition between two items begins.
+    /// Runs the transition between two items. The implementation must call
+    /// <paramref name="onCompleted"/> when the animation finishes so the
+    /// carousel can finalize visibility state.
     /// </summary>
     /// <param name="from">The element being navigated away from. May be null on first load.</param>
     /// <param name="to">The element being navigated to.</param>
     /// <param name="forward">True if navigating forward (next), false if backward (previous).</param>
-    void OnTransitionStarted(UIElement? from, UIElement to, bool forward);
+    /// <param name="onCompleted">Callback to invoke when the animation completes.</param>
+    void Run(UIElement? from, UIElement to, bool forward, Action onCompleted);
 
     /// <summary>
-    /// Called when the transition animation completes.
+    /// Immediately cancels any running transition and resets visual state.
     /// </summary>
-    /// <param name="from">The element that was navigated away from.</param>
-    /// <param name="to">The element that was navigated to.</param>
-    void OnTransitionCompleted(UIElement? from, UIElement to);
+    void Cancel();
 }

@@ -1,58 +1,26 @@
+using System;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
 
 namespace Uno.Toolkit.UI;
 
-/// <summary>
-/// Cross-fade transition between carousel items.
-/// </summary>
-public class FadeTransition : ICarouselTransition
+public class FadeTransition : CarouselTransitionBase
 {
-    private Storyboard? _storyboard;
-
-    public void OnTransitionStarted(UIElement? from, UIElement to, bool forward)
+    protected override void BuildAnimations(Storyboard sb, UIElement? from, UIElement to, bool forward)
     {
-        _storyboard?.Stop();
+        var duration = new Duration(TimeSpan.FromMilliseconds(500));
+        var easing = new CubicEase { EasingMode = EasingMode.EaseInOut };
 
-        var storyboard = new Storyboard();
-        var duration = new Duration(TimeSpan.FromMilliseconds(350));
+        to.Opacity = 0;
+        Canvas.SetZIndex(to, 1);
+        AddAnimation(sb, to, nameof(UIElement.Opacity), 0, 1, duration, easing);
 
-        var fadeInAnim = new DoubleAnimation
-        {
-            From = 0.0,
-            To = 1.0,
-            Duration = duration,
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-        Storyboard.SetTarget(fadeInAnim, to);
-        Storyboard.SetTargetProperty(fadeInAnim, "Opacity");
-        storyboard.Children.Add(fadeInAnim);
-
-        if (from != null)
-        {
-            var fadeOutAnim = new DoubleAnimation
-            {
-                From = 1.0,
-                To = 0.0,
-                Duration = duration,
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
-            };
-            Storyboard.SetTarget(fadeOutAnim, from);
-            Storyboard.SetTargetProperty(fadeOutAnim, "Opacity");
-            storyboard.Children.Add(fadeOutAnim);
-        }
-
-        _storyboard = storyboard;
-        storyboard.Begin();
-    }
-
-    public void OnTransitionCompleted(UIElement? from, UIElement to)
-    {
         if (from != null)
         {
             from.Opacity = 1.0;
+            Canvas.SetZIndex(from, 0);
+            AddAnimation(sb, from, nameof(UIElement.Opacity), 1, 0, duration, easing);
         }
-
-        to.Opacity = 1.0;
     }
 }

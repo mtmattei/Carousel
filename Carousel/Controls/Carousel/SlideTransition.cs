@@ -1,103 +1,45 @@
+using System;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 
 namespace Uno.Toolkit.UI;
 
-/// <summary>
-/// Default slide transition that translates items in/out horizontally or vertically.
-/// </summary>
-public class SlideTransition : ICarouselTransition
+public class SlideTransition : CarouselTransitionBase
 {
-    private Storyboard? _storyboard;
-
-    public void OnTransitionStarted(UIElement? from, UIElement to, bool forward)
+    protected override void BuildAnimations(Storyboard sb, UIElement? from, UIElement to, bool forward)
     {
-        _storyboard?.Stop();
+        var duration = new Duration(TimeSpan.FromMilliseconds(400));
+        var easing = new CubicEase { EasingMode = EasingMode.EaseInOut };
+        var distance = to is FrameworkElement fe && fe.ActualWidth > 0 ? fe.ActualWidth : 800;
 
-        var storyboard = new Storyboard();
-        var duration = new Duration(TimeSpan.FromMilliseconds(300));
+        // Incoming: slide in from off-screen
+        EnsureTranslateTransform(to);
+        var inStart = forward ? distance : -distance;
+        if (to.RenderTransform is TranslateTransform toTt) toTt.X = inStart;
+        to.Opacity = 1.0;
+        Canvas.SetZIndex(to, 1);
 
-        // Ensure the "to" element has a RenderTransform
-        if (to.RenderTransform is not TranslateTransform)
-        {
-            to.RenderTransform = new TranslateTransform();
-        }
+        AddAnimation(sb, to.RenderTransform, nameof(TranslateTransform.X),
+            inStart, 0, duration, easing, dependent: true);
 
-        // Slide the "to" element in from the right (forward) or left (backward)
-        var slideInOffset = forward ? 400.0 : -400.0;
-        var slideInAnim = new DoubleAnimation
-        {
-            From = slideInOffset,
-            To = 0,
-            Duration = duration,
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-        Storyboard.SetTarget(slideInAnim, to);
-        Storyboard.SetTargetProperty(slideInAnim, "(UIElement.RenderTransform).(TranslateTransform.X)");
-        storyboard.Children.Add(slideInAnim);
-
-        // Fade in the "to" element
-        var fadeInAnim = new DoubleAnimation
-        {
-            From = 0.0,
-            To = 1.0,
-            Duration = duration
-        };
-        Storyboard.SetTarget(fadeInAnim, to);
-        Storyboard.SetTargetProperty(fadeInAnim, "Opacity");
-        storyboard.Children.Add(fadeInAnim);
-
-        // Slide and fade out the "from" element
+        // Outgoing: slide out opposite side
         if (from != null)
         {
-            if (from.RenderTransform is not TranslateTransform)
-            {
-                from.RenderTransform = new TranslateTransform();
-            }
+            EnsureTranslateTransform(from);
+            from.Opacity = 1.0;
+            Canvas.SetZIndex(from, 0);
 
-            var slideOutOffset = forward ? -400.0 : 400.0;
-            var slideOutAnim = new DoubleAnimation
-            {
-                From = 0,
-                To = slideOutOffset,
-                Duration = duration,
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
-            };
-            Storyboard.SetTarget(slideOutAnim, from);
-            Storyboard.SetTargetProperty(slideOutAnim, "(UIElement.RenderTransform).(TranslateTransform.X)");
-            storyboard.Children.Add(slideOutAnim);
-
-            var fadeOutAnim = new DoubleAnimation
-            {
-                From = 1.0,
-                To = 0.0,
-                Duration = duration
-            };
-            Storyboard.SetTarget(fadeOutAnim, from);
-            Storyboard.SetTargetProperty(fadeOutAnim, "Opacity");
-            storyboard.Children.Add(fadeOutAnim);
+            AddAnimation(sb, from.RenderTransform, nameof(TranslateTransform.X),
+                0, forward ? -distance : distance, duration, easing, dependent: true);
         }
-
-        _storyboard = storyboard;
-        storyboard.Begin();
     }
 
-    public void OnTransitionCompleted(UIElement? from, UIElement to)
+    protected override void Finalize(UIElement? from, UIElement? to)
     {
-        if (from != null)
-        {
-            from.Opacity = 1.0;
-            if (from.RenderTransform is TranslateTransform tt)
-            {
-                tt.X = 0;
-            }
-        }
-
-        to.Opacity = 1.0;
-        if (to.RenderTransform is TranslateTransform toTt)
-        {
-            toTt.X = 0;
-        }
+        base.Finalize(from, to);
+        if (from?.RenderTransform is TranslateTransform fromTt) fromTt.X = 0;
+        if (to?.RenderTransform is TranslateTransform toTt) toTt.X = 0;
     }
 }

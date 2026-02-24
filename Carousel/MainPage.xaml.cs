@@ -1,14 +1,14 @@
-using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
 using Uno.Toolkit.UI;
-using Windows.UI;
 
 namespace CarouselDemo;
 
 public sealed partial class MainPage : Page
 {
+    private readonly Random _random = new();
+    private List<PhotoItem> _bindingPhotos = new();
+
     public MainPage()
     {
         this.InitializeComponent();
@@ -23,92 +23,58 @@ public sealed partial class MainPage : Page
         SetupAutoPlayCarousel();
         SetupNoLoopCarousel();
         SetupFadeCarousel();
+        SetupBindingCarousel();
+        SetupEdgeCaseCarousels();
     }
 
     private void SetupBasicCarousel()
     {
-        var items = new List<SolidColorBrush>
+        var photos = new List<PhotoItem>
         {
-            new SolidColorBrush(Color.FromArgb(255, 103, 80, 164)),   // Primary
-            new SolidColorBrush(Color.FromArgb(255, 98, 91, 113)),    // Secondary
-            new SolidColorBrush(Color.FromArgb(255, 125, 82, 96)),    // Tertiary
-            new SolidColorBrush(Color.FromArgb(255, 79, 55, 139)),    // PrimaryContainer
-            new SolidColorBrush(Color.FromArgb(255, 74, 68, 88)),     // SecondaryContainer
+            new("https://picsum.photos/seed/carousel1/1080/720", "Mountain Landscape"),
+            new("https://picsum.photos/seed/carousel2/1080/720", "Ocean Sunset"),
+            new("https://picsum.photos/seed/carousel3/1080/720", "Forest Trail"),
+            new("https://picsum.photos/seed/carousel4/1080/720", "City Skyline"),
+            new("https://picsum.photos/seed/carousel5/1080/720", "Desert Dunes"),
         };
 
-        var panels = new List<FrameworkElement>();
-        var labels = new string[] { "Primary", "Secondary", "Tertiary", "Container 1", "Container 2" };
-        for (int i = 0; i < items.Count; i++)
-        {
-            var grid = new Grid
-            {
-                Background = items[i],
-            };
-            var text = new TextBlock
-            {
-                Text = labels[i],
-                FontSize = 24,
-                Foreground = new SolidColorBrush(Colors.White),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            grid.Children.Add(text);
-            panels.Add(grid);
-        }
-
-        BasicCarousel.ItemsSource = panels;
+        BasicCarousel.ItemsSource = photos;
         BasicCarousel.SelectionChanged += (s, args) =>
         {
-            BasicCarouselStatus.Text = $"Item {args.NewIndex + 1} of {panels.Count}";
+            BasicCarouselStatus.Text = $"{args.NewIndex + 1} / {photos.Count}";
         };
-        BasicCarouselStatus.Text = "Item 1 of 5";
+        BasicCarouselStatus.Text = $"1 / {photos.Count}";
     }
 
     private void SetupVerticalCarousel()
     {
-        var items = new List<FrameworkElement>();
-        var colors = new[]
+        var photos = new List<PhotoItem>
         {
-            Color.FromArgb(255, 0, 150, 136),   // Teal
-            Color.FromArgb(255, 33, 150, 243),   // Blue
-            Color.FromArgb(255, 156, 39, 176),   // Purple
-            Color.FromArgb(255, 255, 152, 0),    // Orange
+            new("https://picsum.photos/seed/vert1/1080/720", "Autumn Leaves"),
+            new("https://picsum.photos/seed/vert2/1080/720", "Snowy Peaks"),
+            new("https://picsum.photos/seed/vert3/1080/720", "Tropical Beach"),
+            new("https://picsum.photos/seed/vert4/1080/720", "Rolling Hills"),
         };
-        var names = new[] { "Slide Up", "Keep Going", "Almost There", "Loop Back" };
 
-        for (int i = 0; i < colors.Length; i++)
-        {
-            var grid = new Grid { Background = new SolidColorBrush(colors[i]) };
-            grid.Children.Add(new TextBlock
-            {
-                Text = names[i],
-                FontSize = 22,
-                Foreground = new SolidColorBrush(Colors.White),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            });
-            items.Add(grid);
-        }
-
-        VerticalCarousel.ItemsSource = items;
+        VerticalCarousel.ItemsSource = photos;
     }
 
     private void SetupTemplatedCarousel()
     {
-        var slides = new List<SlideData>
+        var slides = new List<CardItem>
         {
-            new("&#xE716;", "Welcome", "Get started with the Carousel control",
-                new SolidColorBrush(Color.FromArgb(255, 103, 80, 164)),
-                new SolidColorBrush(Colors.White)),
-            new("&#xE80F;", "Navigate", "Swipe or use buttons to browse",
-                new SolidColorBrush(Color.FromArgb(255, 0, 120, 215)),
-                new SolidColorBrush(Colors.White)),
-            new("&#xE734;", "Favorite", "Mark your favorite items",
-                new SolidColorBrush(Color.FromArgb(255, 218, 59, 59)),
-                new SolidColorBrush(Colors.White)),
-            new("&#xE73E;", "Complete", "You have explored all slides",
-                new SolidColorBrush(Color.FromArgb(255, 16, 137, 62)),
-                new SolidColorBrush(Colors.White)),
+            new("https://picsum.photos/seed/card1/1080/720",
+                "Explore Nature",
+                "Discover breathtaking landscapes from around the world"),
+            new("https://picsum.photos/seed/card2/1080/720",
+                "Urban Architecture",
+                "Modern cityscapes and iconic buildings captured in stunning detail"),
+            new("https://picsum.photos/seed/card3/1080/720",
+                "Wildlife",
+                "Intimate portraits of animals in their natural habitats"),
+            new("https://picsum.photos/seed/card4/1080/720",
+                "Abstract Art",
+                "Creative compositions that challenge perception"),
         };
 
         TemplatedCarousel.ItemsSource = slides;
@@ -116,101 +82,122 @@ public sealed partial class MainPage : Page
 
     private void SetupAutoPlayCarousel()
     {
-        var items = new List<FrameworkElement>();
-        var colors = new[]
+        var urls = new List<string>
         {
-            Color.FromArgb(255, 229, 57, 53),    // Red
-            Color.FromArgb(255, 253, 216, 53),    // Yellow
-            Color.FromArgb(255, 67, 160, 71),     // Green
-            Color.FromArgb(255, 30, 136, 229),    // Blue
+            "https://picsum.photos/seed/auto1/1080/720",
+            "https://picsum.photos/seed/auto2/1080/720",
+            "https://picsum.photos/seed/auto3/1080/720",
+            "https://picsum.photos/seed/auto4/1080/720",
+            "https://picsum.photos/seed/auto5/1080/720",
         };
-        var names = new[] { "Auto 1", "Auto 2", "Auto 3", "Auto 4" };
 
-        for (int i = 0; i < colors.Length; i++)
-        {
-            var grid = new Grid { Background = new SolidColorBrush(colors[i]) };
-            grid.Children.Add(new TextBlock
-            {
-                Text = names[i],
-                FontSize = 22,
-                Foreground = new SolidColorBrush(Colors.White),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            });
-            items.Add(grid);
-        }
-
-        AutoPlayCarousel.ItemsSource = items;
+        AutoPlayCarousel.ItemsSource = urls;
         AutoPlayCarousel.AutoPlayInterval = TimeSpan.FromSeconds(3);
     }
 
     private void SetupNoLoopCarousel()
     {
-        var items = new List<FrameworkElement>();
-        var colors = new[]
+        var photos = new List<PhotoItem>
         {
-            Color.FromArgb(255, 121, 85, 72),     // Brown
-            Color.FromArgb(255, 96, 125, 139),     // BlueGrey
-            Color.FromArgb(255, 158, 158, 158),    // Grey
+            new("https://picsum.photos/seed/noloop1/1080/720", "First - cannot go back"),
+            new("https://picsum.photos/seed/noloop2/1080/720", "Middle"),
+            new("https://picsum.photos/seed/noloop3/1080/720", "Last - cannot go forward"),
         };
-        var names = new[] { "First (no wrap)", "Middle", "Last (no wrap)" };
 
-        for (int i = 0; i < colors.Length; i++)
-        {
-            var grid = new Grid { Background = new SolidColorBrush(colors[i]) };
-            grid.Children.Add(new TextBlock
-            {
-                Text = names[i],
-                FontSize = 20,
-                Foreground = new SolidColorBrush(Colors.White),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            });
-            items.Add(grid);
-        }
-
-        NoLoopCarousel.ItemsSource = items;
+        NoLoopCarousel.ItemsSource = photos;
     }
 
     private void SetupFadeCarousel()
     {
         FadeCarousel.ItemTransition = new FadeTransition();
 
-        var items = new List<FrameworkElement>();
-        var colors = new[]
+        var photos = new List<PhotoItem>
         {
-            Color.FromArgb(255, 171, 71, 188),    // Purple
-            Color.FromArgb(255, 77, 182, 172),     // Teal
-            Color.FromArgb(255, 255, 183, 77),     // Amber
+            new("https://picsum.photos/seed/fade1/1080/720", "Cross-fade transition"),
+            new("https://picsum.photos/seed/fade2/1080/720", "Smooth opacity blend"),
+            new("https://picsum.photos/seed/fade3/1080/720", "Elegant reveal"),
         };
-        var names = new[] { "Fade In", "Cross Fade", "Fade Out" };
 
-        for (int i = 0; i < colors.Length; i++)
-        {
-            var grid = new Grid { Background = new SolidColorBrush(colors[i]) };
-            grid.Children.Add(new TextBlock
-            {
-                Text = names[i],
-                FontSize = 22,
-                Foreground = new SolidColorBrush(Colors.White),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            });
-            items.Add(grid);
-        }
-
-        FadeCarousel.ItemsSource = items;
+        FadeCarousel.ItemsSource = photos;
     }
 
-    private void OnPreviousClicked(object sender, RoutedEventArgs e) => BasicCarousel.Previous();
-    private void OnNextClicked(object sender, RoutedEventArgs e) => BasicCarousel.Next();
-    private void OnFadePreviousClicked(object sender, RoutedEventArgs e) => FadeCarousel.Previous();
-    private void OnFadeNextClicked(object sender, RoutedEventArgs e) => FadeCarousel.Next();
+    private void SetupBindingCarousel()
+    {
+        _bindingPhotos = new List<PhotoItem>
+        {
+            new("https://picsum.photos/seed/bind1/1080/720", "Slide 1"),
+            new("https://picsum.photos/seed/bind2/1080/720", "Slide 2"),
+            new("https://picsum.photos/seed/bind3/1080/720", "Slide 3"),
+            new("https://picsum.photos/seed/bind4/1080/720", "Slide 4"),
+            new("https://picsum.photos/seed/bind5/1080/720", "Slide 5"),
+        };
+
+        BindingCarousel.ItemsSource = _bindingPhotos;
+
+        // Set slider range
+        BindingSlider.Maximum = _bindingPhotos.Count - 1;
+        BindingSlider.Value = 0;
+        UpdateBindingIndexText(0);
+
+        // Two-way sync: Slider -> Carousel
+        BindingSlider.ValueChanged += (s, args) =>
+        {
+            var index = (int)args.NewValue;
+            if (BindingCarousel.SelectedIndex != index)
+            {
+                BindingCarousel.GoTo(index);
+            }
+        };
+
+        // Two-way sync: Carousel -> Slider
+        BindingCarousel.SelectionChanged += (s, args) =>
+        {
+            BindingSlider.Value = args.NewIndex;
+            UpdateBindingIndexText(args.NewIndex);
+        };
+    }
+
+    private void UpdateBindingIndexText(int index)
+    {
+        BindingIndexText.Text = $"Item {index + 1} of {_bindingPhotos.Count}";
+    }
+
+    private void SetupEdgeCaseCarousels()
+    {
+        // Empty carousel - just set null/empty source
+        EmptyCarousel.ItemsSource = new List<string>();
+
+        // Single-item carousel
+        SingleItemCarousel.ItemsSource = new List<PhotoItem>
+        {
+            new("https://picsum.photos/seed/single1/1080/720", "Only item - no navigation possible"),
+        };
+    }
+
+    private void OnGoToFirstClicked(object sender, RoutedEventArgs e) => BindingCarousel.GoTo(0);
+
+    private void OnGoToLastClicked(object sender, RoutedEventArgs e)
+    {
+        if (_bindingPhotos.Count > 0)
+            BindingCarousel.GoTo(_bindingPhotos.Count - 1);
+    }
+
+    private void OnGoToRandomClicked(object sender, RoutedEventArgs e)
+    {
+        if (_bindingPhotos.Count > 1)
+        {
+            int current = BindingCarousel.SelectedIndex;
+            int next;
+            do
+            {
+                next = _random.Next(0, _bindingPhotos.Count);
+            } while (next == current);
+
+            BindingCarousel.GoTo(next);
+        }
+    }
 }
 
-public record SlideData(
-    string Icon,
-    string Title,
-    string Description,
-    SolidColorBrush Background,
-    SolidColorBrush Foreground);
+public record PhotoItem(string ImageUrl, string Caption);
+
+public record CardItem(string ImageUrl, string Title, string Description);

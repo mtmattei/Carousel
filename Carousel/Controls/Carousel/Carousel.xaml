@@ -51,11 +51,13 @@
                       MinWidth="40"
                       MinHeight="40"
                       CornerRadius="20"
-                      Visibility="Collapsed"
+                      Background="{ThemeResource CarouselNavButtonBackground}"
+                      BorderThickness="0"
                       AutomationProperties.Name="Previous">
                 <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                           Glyph="&#xE76B;"
-                          FontSize="16" />
+                          FontSize="16"
+                          Foreground="{ThemeResource CarouselNavButtonForeground}" />
               </Button>
 
               <Button x:Name="PART_NextButton"
@@ -68,11 +70,13 @@
                       MinWidth="40"
                       MinHeight="40"
                       CornerRadius="20"
-                      Visibility="Collapsed"
+                      Background="{ThemeResource CarouselNavButtonBackground}"
+                      BorderThickness="0"
                       AutomationProperties.Name="Next">
                 <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}"
                           Glyph="&#xE76C;"
-                          FontSize="16" />
+                          FontSize="16"
+                          Foreground="{ThemeResource CarouselNavButtonForeground}" />
               </Button>
 
               <!-- Indicator dots -->
@@ -88,5 +92,22 @@
       </Setter.Value>
     </Setter>
   </Style>
+
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="CarouselIndicatorActiveBrush" Color="#333333" />
+      <SolidColorBrush x:Key="CarouselIndicatorInactiveBrush" Color="#99999999" />
+      <SolidColorBrush x:Key="CarouselNavButtonBackground" Color="#40000000" />
+      <SolidColorBrush x:Key="CarouselNavButtonForeground" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="CarouselNavButtonBackgroundPointerOver" Color="#60000000" />
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Default">
+      <SolidColorBrush x:Key="CarouselIndicatorActiveBrush" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="CarouselIndicatorInactiveBrush" Color="#80FFFFFF" />
+      <SolidColorBrush x:Key="CarouselNavButtonBackground" Color="#40000000" />
+      <SolidColorBrush x:Key="CarouselNavButtonForeground" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="CarouselNavButtonBackgroundPointerOver" Color="#60000000" />
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
 
 </ResourceDictionary>

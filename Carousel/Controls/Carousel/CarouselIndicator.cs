@@ -8,9 +8,6 @@ using Windows.UI;
 
 namespace Uno.Toolkit.UI;
 
-/// <summary>
-/// Internal control that renders page indicator dots for the carousel.
-/// </summary>
 internal partial class CarouselIndicator : Panel
 {
     private int _itemCount;
@@ -21,203 +18,122 @@ internal partial class CarouselIndicator : Panel
     private double _dotSpacing = 8;
     private Orientation _orientation = Orientation.Horizontal;
 
+    private static readonly Brush DefaultActiveBrush = new SolidColorBrush(Colors.White);
+    private static readonly Brush DefaultInactiveBrush = new SolidColorBrush(Color.FromArgb(128, 255, 255, 255));
+
+    private Brush EffectiveActiveBrush => _activeBrush ?? DefaultActiveBrush;
+    private Brush EffectiveInactiveBrush => _inactiveBrush ?? DefaultInactiveBrush;
+
     internal int ItemCount
     {
         get => _itemCount;
-        set
-        {
-            if (_itemCount != value)
-            {
-                _itemCount = value;
-                RebuildDots();
-            }
-        }
+        set { if (_itemCount != value) { _itemCount = value; RebuildDots(); } }
     }
 
     internal int SelectedIndex
     {
         get => _selectedIndex;
-        set
-        {
-            if (_selectedIndex != value)
-            {
-                _selectedIndex = value;
-                UpdateDotStates();
-            }
-        }
+        set { if (_selectedIndex != value) { _selectedIndex = value; UpdateDotStates(); } }
     }
 
     internal Brush? ActiveBrush
     {
         get => _activeBrush;
-        set
-        {
-            _activeBrush = value;
-            UpdateDotStates();
-        }
+        set { _activeBrush = value; UpdateDotStates(); }
     }
 
     internal Brush? InactiveBrush
     {
         get => _inactiveBrush;
-        set
-        {
-            _inactiveBrush = value;
-            UpdateDotStates();
-        }
+        set { _inactiveBrush = value; UpdateDotStates(); }
     }
 
     internal double DotSize
     {
         get => _dotSize;
-        set
-        {
-            _dotSize = value;
-            RebuildDots();
-        }
+        set { _dotSize = value; RebuildDots(); }
     }
 
     internal double DotSpacing
     {
         get => _dotSpacing;
-        set
-        {
-            _dotSpacing = value;
-            InvalidateMeasure();
-        }
+        set { _dotSpacing = value; InvalidateMeasure(); }
     }
 
     internal Orientation Orientation
     {
         get => _orientation;
-        set
-        {
-            if (_orientation != value)
-            {
-                _orientation = value;
-                InvalidateMeasure();
-            }
-        }
+        set { if (_orientation != value) { _orientation = value; InvalidateMeasure(); } }
     }
 
     private void RebuildDots()
     {
         Children.Clear();
-
-        var defaultActive = new SolidColorBrush(Colors.White);
-        var defaultInactive = new SolidColorBrush(Color.FromArgb(128, 255, 255, 255));
-
         for (int i = 0; i < _itemCount; i++)
         {
-            var dot = new Ellipse
+            var active = i == _selectedIndex;
+            Children.Add(new Ellipse
             {
-                Width = _dotSize,
-                Height = _dotSize,
-                Fill = i == _selectedIndex
-                    ? (_activeBrush ?? defaultActive)
-                    : (_inactiveBrush ?? defaultInactive)
-            };
-            Children.Add(dot);
+                Width = _dotSize, Height = _dotSize,
+                Fill = active ? EffectiveActiveBrush : EffectiveInactiveBrush,
+                Opacity = active ? 1.0 : 0.5
+            });
         }
-
         InvalidateMeasure();
     }
 
     private void UpdateDotStates()
     {
-        var defaultActive = new SolidColorBrush(Colors.White);
-        var defaultInactive = new SolidColorBrush(Color.FromArgb(128, 255, 255, 255));
-
         for (int i = 0; i < Children.Count; i++)
         {
             if (Children[i] is Ellipse dot)
             {
-                dot.Fill = i == _selectedIndex
-                    ? (_activeBrush ?? defaultActive)
-                    : (_inactiveBrush ?? defaultInactive);
-
-                // Active dot is slightly larger
-                dot.Width = i == _selectedIndex ? _dotSize * 1.25 : _dotSize;
-                dot.Height = i == _selectedIndex ? _dotSize * 1.25 : _dotSize;
+                var active = i == _selectedIndex;
+                dot.Fill = active ? EffectiveActiveBrush : EffectiveInactiveBrush;
+                dot.Opacity = active ? 1.0 : 0.5;
             }
         }
-
-        InvalidateArrange();
     }
 
+    // All dots are identical size, so we pre-compute totals instead of measuring each child.
     protected override Size MeasureOverride(Size availableSize)
     {
-        double totalWidth = 0;
-        double totalHeight = 0;
-        double maxCross = 0;
+        var count = Children.Count;
+        if (count == 0) return default;
 
+        // Still need to call Measure on children for the layout system
         foreach (var child in Children)
-        {
-            child.Measure(availableSize);
+            child.Measure(new Size(_dotSize, _dotSize));
 
-            if (_orientation == Orientation.Horizontal)
-            {
-                totalWidth += child.DesiredSize.Width;
-                maxCross = Math.Max(maxCross, child.DesiredSize.Height);
-            }
-            else
-            {
-                totalHeight += child.DesiredSize.Height;
-                maxCross = Math.Max(maxCross, child.DesiredSize.Width);
-            }
-        }
-
-        double spacing = Math.Max(0, Children.Count - 1) * _dotSpacing;
-
-        if (_orientation == Orientation.Horizontal)
-        {
-            return new Size(totalWidth + spacing, maxCross);
-        }
-        else
-        {
-            return new Size(maxCross, totalHeight + spacing);
-        }
+        var totalMain = count * _dotSize + Math.Max(0, count - 1) * _dotSpacing;
+        return _orientation == Orientation.Horizontal
+            ? new Size(totalMain, _dotSize)
+            : new Size(_dotSize, totalMain);
     }
 
     protected override Size ArrangeOverride(Size finalSize)
     {
-        double offset = 0;
+        var count = Children.Count;
+        if (count == 0) return finalSize;
 
-        // Center the dots within the panel
-        double totalMain = 0;
-        foreach (var child in Children)
-        {
-            totalMain += _orientation == Orientation.Horizontal
-                ? child.DesiredSize.Width
-                : child.DesiredSize.Height;
-        }
-        totalMain += Math.Max(0, Children.Count - 1) * _dotSpacing;
-
-        if (_orientation == Orientation.Horizontal)
-        {
-            offset = Math.Max(0, (finalSize.Width - totalMain) / 2.0);
-        }
-        else
-        {
-            offset = Math.Max(0, (finalSize.Height - totalMain) / 2.0);
-        }
+        var totalMain = count * _dotSize + Math.Max(0, count - 1) * _dotSpacing;
+        var horizontal = _orientation == Orientation.Horizontal;
+        var offset = Math.Max(0, ((horizontal ? finalSize.Width : finalSize.Height) - totalMain) / 2.0);
 
         foreach (var child in Children)
         {
-            if (_orientation == Orientation.Horizontal)
+            if (horizontal)
             {
-                double y = (finalSize.Height - child.DesiredSize.Height) / 2.0;
-                child.Arrange(new Rect(offset, y, child.DesiredSize.Width, child.DesiredSize.Height));
-                offset += child.DesiredSize.Width + _dotSpacing;
+                var y = (finalSize.Height - _dotSize) / 2.0;
+                child.Arrange(new Rect(offset, y, _dotSize, _dotSize));
             }
             else
             {
-                double x = (finalSize.Width - child.DesiredSize.Width) / 2.0;
-                child.Arrange(new Rect(x, offset, child.DesiredSize.Width, child.DesiredSize.Height));
-                offset += child.DesiredSize.Height + _dotSpacing;
+                var x = (finalSize.Width - _dotSize) / 2.0;
+                child.Arrange(new Rect(x, offset, _dotSize, _dotSize));
             }
+            offset += _dotSize + _dotSpacing;
         }
-
         return finalSize;
     }
 }
